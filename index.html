@@ -19,10 +19,6 @@
   </div>
 
   <script type="module">
-    const createContext = () => {
-      return new (window.AudioContext || window.webkitAudioContext)();
-    };
-
     const playWithWebAudio = () => {
       const overlay = document.getElementById('overlay');
       overlay.remove();
