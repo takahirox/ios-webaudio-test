@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>iOS WebAudio simple test</title>
+  <meta charset="utf-8">
+</head>
+<body>
+  <audio loop id="music" preload="auto" style="display: none" crossOrigin="anonymous">
+    <source src="audios/376737_Skullbeatz___Bad_Cat_Maste.mp3" type="audio/mp3">
+  </audio>
+
+  <div id="overlay">
+    <button id="playWithWebAudioButton">Play with WebAudio</button>
+    <button id="playWithoutWebAudioButton">Play without WebAudio</button>
+  </div>
+  <div id="info">
+    music by <a href="http://www.newgrounds.com/audio/listen/376737" target="_blank" rel="noopener noreferrer">skullbeatz</a>
+  </div>
+
+  <script type="module">
+    const createContext = () => {
+      return new (window.AudioContext || window.webkitAudioContext)();
+    };
+
+    const playWithWebAudio = () => {
+      const overlay = document.getElementById('overlay');
+      overlay.remove();
+
+      const audioElement = document.getElementById('music');
+      const context = new (window.AudioContext || window.webkitAudioContext)();
+      const source = context.createMediaElementSource(audioElement);
+      source.connect(context.destination);
+
+      audioElement.play();
+    };
+
+    const playWithoutWebAudio = () => {
+      const overlay = document.getElementById('overlay');
+      overlay.remove();
+
+      const audioElement = document.getElementById('music');
+      audioElement.play();
+    };
+
+    document.getElementById('playWithWebAudioButton').addEventListener('click', playWithWebAudio);
+    document.getElementById('playWithoutWebAudioButton').addEventListener('click', playWithoutWebAudio);
+  </script>
+</body>
+</html>
