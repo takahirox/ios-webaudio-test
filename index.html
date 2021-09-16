@@ -9,9 +9,27 @@
     <source src="audios/376737_Skullbeatz___Bad_Cat_Maste.mp3" type="audio/mp3">
   </audio>
 
-  <div id="overlay">
+  <div>
     <button id="playWithWebAudioButton">Play with WebAudio</button>
     <button id="playWithoutWebAudioButton">Play without WebAudio</button>
+  </div>
+
+  <br />
+
+  <div>
+    WebAudio AudioContext constructor optional parameters<br />
+    <br />
+    latencyHint
+    <select id="latencyHintSelect">
+      <option value="None" selected>None</option>
+      <option value="balanced">balanced</option>
+      <option value="interactive">interactive</option>
+      <option value="playback">playback</option>
+    </select>
+    <br />
+    sampleRate <input id="sampleRateText" type="text"></input>
+    <br />
+    <div id="errorMessage" style="color: red"></div>
   </div>
 
   <br />
@@ -26,24 +44,56 @@
   <div id="useragent"></div>
 
   <script type="module">
+    const disableElements = () => {
+      document.getElementById('playWithWebAudioButton').disabled = true;
+      document.getElementById('playWithoutWebAudioButton').disabled = true;
+      document.getElementById('latencyHintSelect').disabled = true;
+      document.getElementById('sampleRateText').disabled = true;
+    };
+
+    const createAudioContextParameters = () => {
+      const options = {};
+
+      const latencyHintSelect = document.getElementById('latencyHintSelect');
+      const sampleRateText = document.getElementById('sampleRateText');
+
+      const latencyHintOption = latencyHintSelect.options[latencyHintSelect.selectedIndex];
+      const sampleRateValue = sampleRateText.value;
+
+      if (latencyHintOption.value !== 'None') { options.latencyHint = latencyHintOption.value; }
+      if (sampleRateValue !== '') { options.sampleRate = parseInt(sampleRateValue); }
+
+      console.log('AudioContext constructor parameters', options);
+
+      return options;
+    };
+
     const playWithWebAudio = () => {
-      const overlay = document.getElementById('overlay');
-      overlay.remove();
+      disableElements();
 
-      const audioElement = document.getElementById('music');
-      const context = new (window.AudioContext || window.webkitAudioContext)();
-      const source = context.createMediaElementSource(audioElement);
-      source.connect(context.destination);
+      try {
+        const audioElement = document.getElementById('music');
+        const context = new (window.AudioContext || window.webkitAudioContext)(createAudioContextParameters());
+        const source = context.createMediaElementSource(audioElement);
+        source.connect(context.destination);
 
-      audioElement.play();
+        audioElement.play();
+      } catch (e) {
+        document.getElementById('errorMessage').innerText = e.message;
+        console.error(e);
+      }
     };
 
     const playWithoutWebAudio = () => {
-      const overlay = document.getElementById('overlay');
-      overlay.remove();
+      disableElements();
 
-      const audioElement = document.getElementById('music');
-      audioElement.play();
+      try {
+        const audioElement = document.getElementById('music');
+        audioElement.play();
+      } catch (e) {
+        document.getElementById('errorMessage').innerText = e.message;
+        console.error(e);
+      }
     };
 
     document.getElementById('playWithWebAudioButton').addEventListener('click', playWithWebAudio);
