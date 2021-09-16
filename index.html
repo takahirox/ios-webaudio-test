@@ -5,13 +5,10 @@
   <meta charset="utf-8">
 </head>
 <body>
-  <audio loop id="music" preload="auto" style="display: none" crossOrigin="anonymous">
-    <source src="audios/376737_Skullbeatz___Bad_Cat_Maste.mp3" type="audio/mp3">
-  </audio>
-
   <div>
-    <button id="playWithWebAudioButton">Play with WebAudio</button>
-    <button id="playWithoutWebAudioButton">Play without WebAudio</button>
+    <button id="playWithWebAudioMediaElementSourceButton">Play with WebAudio createMediaElementSource()</button><br />
+    <button id="playWithWebAudioBufferSourceButton">Play with WebAudio createBufferSource()</button><br />
+    <button id="playWithoutWebAudioButton">Play without WebAudio</button><br />
   </div>
 
   <br />
@@ -44,14 +41,36 @@
   <div id="useragent"></div>
 
   <script type="module">
+    const audioFileURL = 'audios/376737_Skullbeatz___Bad_Cat_Maste.mp3';
+
     const disableElements = () => {
-      document.getElementById('playWithWebAudioButton').disabled = true;
+      document.getElementById('playWithWebAudioMediaElementSourceButton').disabled = true;
+      document.getElementById('playWithWebAudioBufferSourceButton').disabled = true;
       document.getElementById('playWithoutWebAudioButton').disabled = true;
       document.getElementById('latencyHintSelect').disabled = true;
       document.getElementById('sampleRateText').disabled = true;
     };
 
-    const createAudioContextParameters = () => {
+    const createAudioElement = () => {
+      const audioElement = document.createElement('audio');
+      audioElement.setAttribute('playsinline', '');
+      audioElement.setAttribute('webkit-playsinline', '');
+      audioElement.loop = true;
+      audioElement.preload = 'auto';
+      audioElement.autoplay = true;
+      audioElement.crossOrigin = 'anonymous';
+      audioElement.src = audioFileURL;
+      audioElement.load(); // This seems to be necessary for iOS Safari
+      return audioElement;
+    };
+
+    const loadAudioAsBuffer = async () => {
+      return new Promise((resolve, reject) => {
+        fetch(audioFileURL).then(res => res.arrayBuffer()).then(resolve).catch(reject);
+      });
+    };
+
+    const createAudioContext = () => {
       const options = {};
 
       const latencyHintSelect = document.getElementById('latencyHintSelect');
@@ -65,22 +84,36 @@
 
       console.log('AudioContext constructor parameters', options);
 
-      return options;
+      return new (window.AudioContext || window.webkitAudioContext)(options);
     };
 
-    const playWithWebAudio = () => {
+    const playWithWebAudioMediaElementSource = () => {
       disableElements();
 
       try {
-        const audioElement = document.getElementById('music');
-        const context = new (window.AudioContext || window.webkitAudioContext)(createAudioContextParameters());
+        const audioElement = createAudioElement();
+        audioElement.addEventListener('error', onError);
+        const context = createAudioContext();
         const source = context.createMediaElementSource(audioElement);
         source.connect(context.destination);
-
-        audioElement.play();
       } catch (e) {
-        document.getElementById('errorMessage').innerText = e.message;
-        console.error(e);
+        onError(e);
+      }
+    };
+
+    const playWithWebAudioBufferSource = async () => {
+      disableElements();
+
+      try {
+        const buffer = await loadAudioAsBuffer();
+        const context = createAudioContext();
+        const source = context.createBufferSource();
+        source.loop = true;
+        source.buffer = await context.decodeAudioData(buffer);
+        source.connect(context.destination);
+        source.start(0);
+      } catch (e) {
+        onError(e);
       }
     };
 
@@ -88,15 +121,20 @@
       disableElements();
 
       try {
-        const audioElement = document.getElementById('music');
-        audioElement.play();
+        const audioElement = createAudioElement();
+        audioElement.addEventListener('error', onError);
       } catch (e) {
-        document.getElementById('errorMessage').innerText = e.message;
-        console.error(e);
+        onError(e);
       }
     };
 
-    document.getElementById('playWithWebAudioButton').addEventListener('click', playWithWebAudio);
+    const onError = e => {
+      document.getElementById('errorMessage').innerText = e.message;
+      console.error(e);
+    };
+
+    document.getElementById('playWithWebAudioMediaElementSourceButton').addEventListener('click', playWithWebAudioMediaElementSource);
+    document.getElementById('playWithWebAudioBufferSourceButton').addEventListener('click', playWithWebAudioBufferSource);
     document.getElementById('playWithoutWebAudioButton').addEventListener('click', playWithoutWebAudio);
     document.getElementById('useragent').innerText = navigator.userAgent;
   </script>
