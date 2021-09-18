@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>iOS WebAudio simple test</title>
+  <meta charset="utf-8">
+</head>
+<body>
+  <div>
+    <button id="playButton">Play with WebAudio</button><br />
+    <button id="reconnectButton" disabled>Reconnect</button><br />
+  </div>
+
+  <br />
+
+  <div>
+    WebAudio AudioContext constructor optional parameters<br />
+    <br />
+    latencyHint
+    <select id="latencyHintSelect">
+      <option value="None" selected>None</option>
+      <option value="balanced">balanced</option>
+      <option value="interactive">interactive</option>
+      <option value="playback">playback</option>
+    </select>
+    <br />
+    sampleRate <input id="sampleRateText" type="text"></input>
+    <br />
+    <div id="errorMessage" style="color: red"></div>
+  </div>
+
+  <br />
+
+  <div><a href="https://github.com/takahirox/ios-webaudio-test" target="_blank">Source code</a></div>
+  <div id="info">
+    music by <a href="http://www.newgrounds.com/audio/listen/376737" target="_blank" rel="noopener noreferrer">skullbeatz</a>
+  </div>
+
+  <br />
+
+  <div id="useragent"></div>
+
+  <script type="module">
+    const audioFileURL = 'audios/376737_Skullbeatz___Bad_Cat_Maste.mp3';
+
+    let audioElement = null;
+    let audioSource = null;
+    let audioContext = null;
+
+    const disableElements = () => {
+      document.getElementById('playButton').disabled = true;
+      document.getElementById('reconnectButton').disabled = false;
+      document.getElementById('latencyHintSelect').disabled = true;
+      document.getElementById('sampleRateText').disabled = true;
+    };
+
+    const createAudioElement = () => {
+      audioElement = document.createElement('audio');
+      audioElement.addEventListener('error', onError);
+      audioElement.setAttribute('playsinline', '');
+      audioElement.setAttribute('webkit-playsinline', '');
+      audioElement.loop = true;
+      audioElement.preload = 'auto';
+      audioElement.autoplay = true;
+      audioElement.crossOrigin = 'anonymous';
+      audioElement.src = audioFileURL;
+      audioElement.load(); // This seems to be necessary for iOS Safari
+    };
+
+    const createAudioContext = () => {
+      const options = {};
+
+      const latencyHintSelect = document.getElementById('latencyHintSelect');
+      const sampleRateText = document.getElementById('sampleRateText');
+
+      const latencyHintOption = latencyHintSelect.options[latencyHintSelect.selectedIndex];
+      const sampleRateValue = sampleRateText.value;
+
+      if (latencyHintOption.value !== 'None') { options.latencyHint = latencyHintOption.value; }
+      if (sampleRateValue !== '') { options.sampleRate = parseInt(sampleRateValue); }
+
+      console.log('AudioContext constructor parameters', options);
+
+      audioContext = new (window.AudioContext || window.webkitAudioContext)(options);
+
+      document.getElementById('sampleRateText').value = audioContext.sampleRate;
+    };
+
+    const createAudioSource = () => {
+      audioSource = audioContext.createMediaElementSource(audioElement);
+    };
+
+    const connect = () => {
+      audioSource.connect(audioContext.destination);
+    };
+
+    const disconnect = () => {
+      audioSource.disconnect(audioContext.destination);
+    };
+
+    const play = () => {
+      disableElements();
+
+      try {
+        createAudioElement();
+        createAudioContext();
+        createAudioSource();
+        connect();
+      } catch (e) {
+        onError(e);
+      }
+    };
+
+    const reconnect = () => {
+      try {
+        disconnect();
+        connect();
+      } catch (e) {
+        onError(e);
+      }
+    };
+
+    const onError = e => {
+      document.getElementById('errorMessage').innerText = e.message;
+      console.error(e);
+    };
+
+    document.getElementById('playButton').addEventListener('click', play);
+    document.getElementById('reconnectButton').addEventListener('click', reconnect);
+    document.getElementById('useragent').innerText = navigator.userAgent;
+  </script>
+</body>
+</html>
