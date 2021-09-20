@@ -8,6 +8,7 @@
   <div>
     <button id="playWithWebAudioMediaElementSourceButton">Play with WebAudio createMediaElementSource()</button><br />
     <button id="playWithWebAudioBufferSourceButton">Play with WebAudio createBufferSource()</button><br />
+    <button id="playWithWebAudioStreamButton">Play with WebAudio createMediaStreamSource()</button><br />
     <button id="playWithoutWebAudioButton">Play without WebAudio</button><br />
   </div>
 
@@ -46,9 +47,14 @@
     const disableElements = () => {
       document.getElementById('playWithWebAudioMediaElementSourceButton').disabled = true;
       document.getElementById('playWithWebAudioBufferSourceButton').disabled = true;
+      document.getElementById('playWithWebAudioStreamButton').disabled = true;
       document.getElementById('playWithoutWebAudioButton').disabled = true;
       document.getElementById('latencyHintSelect').disabled = true;
       document.getElementById('sampleRateText').disabled = true;
+    };
+
+    const getUserMediaStream = async () => {
+      return await navigator.mediaDevices.getUserMedia({audio: true})
     };
 
     const createAudioElement = () => {
@@ -117,6 +123,19 @@
       }
     };
 
+    const playWithWebAudioStream = async () => {
+      disableElements();
+
+      try {
+        const stream = await getUserMediaStream();
+        const context = createAudioContext();
+        const source = context.createMediaStreamSource(stream);
+        source.connect(context.destination);
+      } catch (e) {
+        onError(e);
+      }
+    };
+
     const playWithoutWebAudio = () => {
       disableElements();
 
@@ -135,6 +154,7 @@
 
     document.getElementById('playWithWebAudioMediaElementSourceButton').addEventListener('click', playWithWebAudioMediaElementSource);
     document.getElementById('playWithWebAudioBufferSourceButton').addEventListener('click', playWithWebAudioBufferSource);
+    document.getElementById('playWithWebAudioStreamButton').addEventListener('click', playWithWebAudioStream);
     document.getElementById('playWithoutWebAudioButton').addEventListener('click', playWithoutWebAudio);
     document.getElementById('useragent').innerText = navigator.userAgent;
   </script>
