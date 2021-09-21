@@ -101,7 +101,9 @@
         audioElement.addEventListener('error', onError);
         const context = createAudioContext();
         const source = context.createMediaElementSource(audioElement);
-        source.connect(context.destination);
+        const gain = context.createGain();
+        source.connect(gain);
+        gain.connect(context.destination);
       } catch (e) {
         onError(e);
       }
@@ -116,8 +118,10 @@
         const source = context.createBufferSource();
         source.loop = true;
         source.buffer = await context.decodeAudioData(buffer);
-        source.connect(context.destination);
         source.start(0);
+        const gain = context.createGain();
+        source.connect(gain);
+        gain.connect(context.destination);
       } catch (e) {
         onError(e);
       }
@@ -130,7 +134,9 @@
         const stream = await getUserMediaStream();
         const context = createAudioContext();
         const source = context.createMediaStreamSource(stream);
-        source.connect(context.destination);
+        const gain = context.createGain();
+        source.connect(gain);
+        gain.connect(context.destination);
       } catch (e) {
         onError(e);
       }
