@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>iOS WebAudio simple test</title>
+  <meta charset="utf-8">
+</head>
+<body>
+  <div>
+    <button id="runButton">Run</button><br />
+  </div>
+
+  <div>
+    getUserMedia parameters<br />
+    <br />
+    <input id="useGetUserMediaCheckbox" type="checkbox" checked> Use getUserMedia() for mic<br />
+    <br />
+    getUserMedia() option parameters<br />
+    <br />
+    <input id="autoGainControlCheckbox" type="checkbox" checked>autoGainControl<br />
+    <input id="echoCancellationCheckbox" type="checkbox" checked>echoCancellation<br />
+    <input id="noiseSuppressionCheckbox" type="checkbox" checked>noiseSuppression<br />
+  </div>
+
+  <br />
+
+  <div>
+    WebAudio parameters<br />
+    <br />
+    <input id="useWebAudioCheckbox" type="checkbox" checked> Use WebAudio<br />
+    <br />
+    AudioContext constructor optional parameters<br />
+    <br />
+    latencyHint
+    <select id="latencyHintSelect">
+      <option value="None" selected>None</option>
+      <option value="balanced">balanced</option>
+      <option value="interactive">interactive</option>
+      <option value="playback">playback</option>
+    </select>
+    <br />
+    sampleRate <input id="sampleRateText" type="text"></input>
+    <br />
+    <div id="errorMessage" style="color: red"></div>
+  </div>
+
+  <br />
+
+  <div>
+    Three.js parameters<br />
+    <br />
+    <input id="useThreejsCheckbox" type="checkbox" checked> Use Three.js<br />
+  </div>
+
+  <br />
+
+  <div><a href="https://github.com/takahirox/ios-webaudio-test" target="_blank">Source code</a></div>
+  <div id="info">
+    music by <a href="http://www.newgrounds.com/audio/listen/376737" target="_blank" rel="noopener noreferrer">skullbeatz</a>
+  </div>
+
+  <br />
+
+  <div id="useragent"></div>
+
+  <script type="module">
+    import * as THREE from './three/three.module.js';
+
+    const videoFileURL = 'videos/sintel.mp4';
+
+    const disableElements = () => {
+      document.getElementById('runButton').disabled = true;
+      document.getElementById('useGetUserMediaCheckbox').disabled = true;
+      document.getElementById('autoGainControlCheckbox').disabled = true;
+      document.getElementById('echoCancellationCheckbox').disabled = true;
+      document.getElementById('noiseSuppressionCheckbox').disabled = true;
+      document.getElementById('useWebAudioCheckbox').disabled = true;
+      document.getElementById('useThreejsCheckbox').disabled = true;
+      document.getElementById('latencyHintSelect').disabled = true;
+      document.getElementById('sampleRateText').disabled = true;
+    };
+
+    const getUserMediaStream = async () => {
+      const options = {audio: {
+        autoGainControl: document.getElementById('autoGainControlCheckbox').checked,
+        echoCancellation: document.getElementById('echoCancellationCheckbox').checked,
+        noiseSuppression: document.getElementById('noiseSuppressionCheckbox').checked,
+      }};
+
+      console.log('getUserMedia() parameters', options);
+
+      return await navigator.mediaDevices.getUserMedia(options);
+    };
+
+    const createVideoElement = () => {
+      const videoElement = document.createElement('video');
+      videoElement.setAttribute('playsinline', '');
+      videoElement.setAttribute('webkit-playsinline', '');
+      videoElement.loop = true;
+      videoElement.preload = 'auto';
+      videoElement.autoplay = true;
+      videoElement.crossOrigin = 'anonymous';
+      videoElement.src = videoFileURL;
+      videoElement.load(); // This seems to be necessary for iOS Safari
+      return videoElement;
+    };
+
+    const createAudioContext = () => {
+      const options = {};
+
+      const latencyHintSelect = document.getElementById('latencyHintSelect');
+      const sampleRateText = document.getElementById('sampleRateText');
+
+      const latencyHintOption = latencyHintSelect.options[latencyHintSelect.selectedIndex];
+      const sampleRateValue = sampleRateText.value;
+
+      if (latencyHintOption.value !== 'None') { options.latencyHint = latencyHintOption.value; }
+      if (sampleRateValue !== '') { options.sampleRate = parseInt(sampleRateValue); }
+
+      console.log('AudioContext constructor parameters', options);
+
+      return new (window.AudioContext || window.webkitAudioContext)(options);
+    };
+
+    const run = async () => {
+      disableElements();
+
+      try {
+        // mic audio stream
+        if (document.getElementById('useGetUserMediaCheckbox').checked) {
+          getUserMediaStream();
+        }
+
+        // video
+        const videoElement = createVideoElement();
+        videoElement.addEventListener('error', onError);
+
+        // WebAudio
+        if (document.getElementById('useWebAudioCheckbox').checked) {
+          const context = createAudioContext();
+          const source = context.createMediaElementSource(videoElement);
+          source.connect(context.destination);
+        }
+
+        if (document.getElementById('useThreejsCheckbox').checked) {
+          runThree(videoElement);
+        } else {
+          document.body.appendChild(videoElement);
+        }
+      } catch (e) {
+        onError(e);
+      }
+    };
+
+    const onError = e => {
+      document.getElementById('errorMessage').innerText = e.message;
+      console.error(e);
+    };
+
+    const runThree = (videoEl) => {
+      const renderer = new THREE.WebGLRenderer({antialias: true});
+      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.setSize(window.innerWidth, window.innerHeight);
+
+      document.body.appendChild(renderer.domElement);
+
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0xffffff);
+
+      const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.001, 2000);
+
+      const texture = new THREE.VideoTexture(videoEl);
+
+      const plane = new THREE.PlaneBufferGeometry(10, 10);
+      const material = new THREE.MeshBasicMaterial({color: 0xffffff, map: texture});
+      const mesh = new THREE.Mesh(plane, material);
+      mesh.position.z = -10;
+      scene.add(mesh);
+
+      const animate = () => {
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+      };
+      animate();
+    };
+
+    document.getElementById('runButton').addEventListener('click', run);
+    document.getElementById('useragent').innerText = navigator.userAgent;
+  </script>
+</body>
+</html>
