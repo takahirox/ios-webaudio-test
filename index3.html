@@ -107,6 +107,7 @@
         const periodicallyRun = () => {
           requestAnimationFrame(periodicallyRun);
           gain.gain.setTargetAtTime(1.0, context.currentTime, 0.01);
+          console.warn('test');
         };
         periodicallyRun();
       } catch (e) {
