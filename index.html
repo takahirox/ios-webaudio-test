@@ -8,7 +8,6 @@
   <div>
     <button id="playWithWebAudioMediaElementSourceButton">Play with WebAudio createMediaElementSource()</button><br />
     <button id="playWithWebAudioBufferSourceButton">Play with WebAudio createBufferSource()</button><br />
-    <button id="playWithWebAudioStreamButton">Play with WebAudio createMediaStreamSource()</button><br />
     <button id="playWithoutWebAudioButton">Play without WebAudio</button><br />
   </div>
 
@@ -47,14 +46,9 @@
     const disableElements = () => {
       document.getElementById('playWithWebAudioMediaElementSourceButton').disabled = true;
       document.getElementById('playWithWebAudioBufferSourceButton').disabled = true;
-      document.getElementById('playWithWebAudioStreamButton').disabled = true;
       document.getElementById('playWithoutWebAudioButton').disabled = true;
       document.getElementById('latencyHintSelect').disabled = true;
       document.getElementById('sampleRateText').disabled = true;
-    };
-
-    const getUserMediaStream = async () => {
-      return await navigator.mediaDevices.getUserMedia({audio: true})
     };
 
     const createAudioElement = () => {
@@ -101,9 +95,7 @@
         audioElement.addEventListener('error', onError);
         const context = createAudioContext();
         const source = context.createMediaElementSource(audioElement);
-        const gain = context.createGain();
-        source.connect(gain);
-        gain.connect(context.destination);
+        source.connect(context.destination);
       } catch (e) {
         onError(e);
       }
@@ -118,25 +110,8 @@
         const source = context.createBufferSource();
         source.loop = true;
         source.buffer = await context.decodeAudioData(buffer);
+        source.connect(context.destination);
         source.start(0);
-        const gain = context.createGain();
-        source.connect(gain);
-        gain.connect(context.destination);
-      } catch (e) {
-        onError(e);
-      }
-    };
-
-    const playWithWebAudioStream = async () => {
-      disableElements();
-
-      try {
-        const stream = await getUserMediaStream();
-        const context = createAudioContext();
-        const source = context.createMediaStreamSource(stream);
-        const gain = context.createGain();
-        source.connect(gain);
-        gain.connect(context.destination);
       } catch (e) {
         onError(e);
       }
@@ -160,7 +135,6 @@
 
     document.getElementById('playWithWebAudioMediaElementSourceButton').addEventListener('click', playWithWebAudioMediaElementSource);
     document.getElementById('playWithWebAudioBufferSourceButton').addEventListener('click', playWithWebAudioBufferSource);
-    document.getElementById('playWithWebAudioStreamButton').addEventListener('click', playWithWebAudioStream);
     document.getElementById('playWithoutWebAudioButton').addEventListener('click', playWithoutWebAudio);
     document.getElementById('useragent').innerText = navigator.userAgent;
   </script>
